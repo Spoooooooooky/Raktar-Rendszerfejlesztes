@@ -1,26 +1,52 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
-from pydantic import BaseModel
 from tortoise import fields, models
+from pydantic import BaseModel
 
 app = FastAPI()
 
-# Adatbázis modellek
+# Modellek
+class Customer(models.Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=100)
+    email = fields.CharField(max_length=100, unique=True)
+    phone = fields.CharField(max_length=20, unique=True)
+
+class Supplier(models.Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=100)
+    contact_email = fields.CharField(max_length=100, unique=True)
+
+class Carrier(models.Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=100)
+    vehicle_number = fields.CharField(max_length=50, unique=True)
+
+class WarehouseWorker(models.Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=100)
+    employee_id = fields.CharField(max_length=50, unique=True)
+
+class Product(models.Model):
+    id = fields.IntField(pk=True)
+    name = fields.CharField(max_length=100)
+    stock = fields.IntField(default=0)
+
 class Order(models.Model):
     id = fields.IntField(pk=True)
-    customer_name = fields.CharField(max_length=100)
-    product = fields.CharField(max_length=100)
+    customer = fields.ForeignKeyField("models.Customer", related_name="orders")
+    product = fields.ForeignKeyField("models.Product", related_name="orders")
     quantity = fields.IntField()
     status = fields.CharField(max_length=50, default="pending")
     created_at = fields.DatetimeField(auto_now_add=True)
 
+# Pydantic modellek
 class Order_Pydantic(BaseModel):
-    customer_name: str
-    product: str
+    customer: int
+    product: int
     quantity: int
     status: str
 
-# API végpontok
 @app.post("/orders/")
 async def create_order(order: Order_Pydantic):
     new_order = await Order.create(**order.dict())
@@ -32,10 +58,20 @@ async def list_orders():
     return orders
 
 # Adatbázis konfiguráció és migráció
+TORTOISE_ORM = {
+    "connections": {"default": "sqlite://db.sqlite3"},
+    "apps": {
+        "models": {
+            "models": ["raktar_backend", "aerich.models"], 
+            "default_connection": "default",
+        }
+    }
+}
+
 register_tortoise(
     app,
     db_url="sqlite://db.sqlite3",
-    modules={"models": [__name__]},
-    generate_schemas=True,
+    modules={"models": ["raktar_backend"]},
+    generate_schemas=False,  # Mivel aerich-t használunk migrációra
     add_exception_handlers=True,
 )
