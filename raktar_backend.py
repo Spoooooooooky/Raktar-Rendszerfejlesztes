@@ -3,8 +3,6 @@ from tortoise.contrib.fastapi import register_tortoise
 from tortoise import fields, models
 from pydantic import BaseModel
 
-# !!! OLVASD EL AZ info.md FILE-T !!!
-
 app = FastAPI()
 
 # Modellek
@@ -60,10 +58,20 @@ async def list_orders():
     return orders
 
 # Adatbázis konfiguráció és migráció
+TORTOISE_ORM = {
+    "connections": {"default": "sqlite://db.sqlite3"},
+    "apps": {
+        "models": {
+            "models": ["raktar_backend", "aerich.models"], 
+            "default_connection": "default",
+        }
+    }
+}
+
 register_tortoise(
     app,
     db_url="sqlite://db.sqlite3",
-    modules={"models": [__name__]},
+    modules={"models": ["raktar_backend"]},
     generate_schemas=False,  # Mivel aerich-t használunk migrációra
     add_exception_handlers=True,
 )
