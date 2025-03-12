@@ -31,7 +31,7 @@ class Rendeles(models.Model):
 class Beszallitas(models.Model):
     id = fields.IntField(pk=True)
     urlap = fields.ForeignKeyField("models.Urlap", related_name="beszallitasok")
-    beszallito = fields.ForeignKeyField("models.Beszallito", related_name="beszallitasok")
+    beszallito = fields.ForeignKeyField("models.Felhasznalo", related_name="beszallitasok")
 
 class Urlap(models.Model):
     id = fields.IntField(pk=True)
