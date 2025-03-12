@@ -7,66 +7,77 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Modellek
-class Customer(models.Model):
+class Felhasznalo(models.Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
+    telefonszam = fields.CharField(max_length=20, unique=True)
     email = fields.CharField(max_length=100, unique=True)
-    phone = fields.CharField(max_length=20, unique=True)
+    nev = fields.CharField(max_length=100)
+    szerep = fields.CharField(max_length=50)
 
-class Supplier(models.Model):
+class Termek(models.Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    contact_email = fields.CharField(max_length=100, unique=True)
+    nev = fields.CharField(max_length=100)
+    ar = fields.IntField()
+    afa_kulcs = fields.IntField()
 
-class Carrier(models.Model):
+class Rendeles(models.Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    vehicle_number = fields.CharField(max_length=50, unique=True)
+    termek = fields.ForeignKeyField("models.Termek", related_name="rendelesek")
+    mennyiseg = fields.IntField()
+    allapot = fields.CharField(max_length=50)
+    megrendelo = fields.ForeignKeyField("models.Felhasznalo", related_name="rendelesek")
+    szallitasi_cim = fields.CharField(max_length=255)
 
-class WarehouseWorker(models.Model):
+class Beszallitas(models.Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    employee_id = fields.CharField(max_length=50, unique=True)
+    urlap = fields.ForeignKeyField("models.Urlap", related_name="beszallitasok")
+    beszallito = fields.ForeignKeyField("models.Beszallito", related_name="beszallitasok")
 
-class Product(models.Model):
+class Urlap(models.Model):
     id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    stock = fields.IntField(default=0)
+    idopont = fields.DatetimeField(auto_now_add=True)
+    termek = fields.ForeignKeyField("models.Termek", related_name="urlapok")
+    mennyiseg = fields.IntField()
 
-class Order(models.Model):
+class Fuvar(models.Model):
     id = fields.IntField(pk=True)
-    customer = fields.ForeignKeyField("models.Customer", related_name="orders")
-    product = fields.ForeignKeyField("models.Product", related_name="orders")
-    quantity = fields.IntField()
-    status = fields.CharField(max_length=50, default="pending")
-    created_at = fields.DatetimeField(auto_now_add=True)
+    rendeles = fields.ForeignKeyField("models.Rendeles", related_name="fuvarok")
+    allapot = fields.CharField(max_length=50)
+    fuvarozo = fields.ForeignKeyField("models.Felhasznalo", related_name="fuvarok")
+
+class Tarhely(models.Model):
+    id = fields.IntField(pk=True)
+    termek = fields.ForeignKeyField("models.Termek", related_name="tarhelyek")
+    mennyiseg = fields.IntField()
+    beerkezes_datuma = fields.DatetimeField(auto_now_add=True)
 
 # Pydantic modellek
-class Order_Pydantic(BaseModel):
-    customer: int
-    product: int
-    quantity: int
-    status: str
+class Rendeles_Pydantic(BaseModel):
+    termek: int
+    mennyiseg: int
+    allapot: str
+    megrendelo: int
+    szallitasi_cim: str
 
-@app.post("/orders/")
-async def create_order(order: Order_Pydantic):
-    new_order = await Order.create(**order.dict())
-    return {"message": "Order created", "order_id": new_order.id}
+@app.post("/rendelesek/")
+async def create_order(rendeles: Rendeles_Pydantic):
+    new_order = await Rendeles.create(**rendeles.dict())
+    return {"message": "Rendelés létrehozva", "rendeles_id": new_order.id}
 
-@app.get("/orders/")
+@app.get("/rendelesek/")
 async def list_orders():
-    orders = await Order.all().values()
-    return orders
+    rendelesek = await Rendeles.all().values()
+    return rendelesek
 
-@app.post("/add-product/")
-async def add_product(name: str, stock: int):
-    product = await Product.create(name=name, stock=stock)
-    return {"message": "Product added", "product_id": product.id}
+@app.post("/termek-hozzaadasa/")
+async def add_product(nev: str, ar: int, afa_kulcs: int):
+    termek = await Termek.create(nev=nev, ar=ar, afa_kulcs=afa_kulcs)
+    return {"message": "Termék hozzáadva", "termek_id": termek.id}
 
-@app.delete("/clear-data/")
+@app.delete("/adatok-torlese/")
 async def clear_data():
-    await Product.all().delete()
-    return {"message": "All data cleared"}
+    await Termek.all().delete()
+    return {"message": "Minden adat törölve"}
 
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {
@@ -82,6 +93,7 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True,
 )
+
 def start():
     uvicorn.run("raktar_backend:app", host="127.0.0.1", port=8000, reload=True)
 
