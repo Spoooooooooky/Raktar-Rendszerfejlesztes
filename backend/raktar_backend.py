@@ -17,7 +17,7 @@ class Felhasznalo(models.Model):
 class Termek(models.Model):
     id = fields.IntField(pk=True)
     nev = fields.CharField(max_length=100)
-    ar = fields.IntField()
+    ar = fields.FloatField()  # Módosítva int-ről float-ra
     afa_kulcs = fields.IntField()
 
 class Rendeles(models.Model):
@@ -60,7 +60,7 @@ class Felhasznalo_Pydantic(BaseModel):
 
 class Termek_Pydantic(BaseModel):
     nev: str
-    ar: int
+    ar: float  # Módosítva int-ről float-ra
     afa_kulcs: int
 
 class Rendeles_Pydantic(BaseModel):
