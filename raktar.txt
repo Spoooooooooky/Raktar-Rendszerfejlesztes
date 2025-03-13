@@ -47,3 +47,30 @@ Hibatűrő képessége is kiemelten fontos, a rendszernek képesnek kell lennie 
 Emellett kompatibilisnek kell lennie különböző platformokkal és eszközökkel, beleértve az asztali és mobil eszközöket, hogy a felhasználók bárhonnan hozzáférhessenek a rendszerhez.
 Az adatbázis-kezelésnek hatékonynak és gyorsnak kell lennie, hogy támogassa az áruk nyilvántartását, a megrendelések feldolgozását és az állapotjelentések frissítését.
 Összességében a Raktár rendszer célja a raktárkészlet hatékony és biztonságos kezelése, a szállítási folyamatok optimalizálása, valamint a felhasználók közötti zökkenőmentes kommunikáció biztosítása a rendelési, szállítási és raktározási folyamat során.
+
+Raktar-Rendszerfejlesztes/
+├── backend/
+│   ├── raktar_backend.py
+│   ├── migrations/
+│   │   ├── __init__.py
+│   │   ├── some_migration_file.py
+│   │   └── ...
+│   ├── db.sqlite3
+│   ├── db.sqlite3-shm
+│   ├── db.sqlite3-wal
+│   └── .env
+├── frontend/
+│   ├── testfend.py
+│   └── ...
+├── .gitignore
+├── info.md
+├── requirements.txt
+├── Pipfile
+├── Pipfile.lock
+├── .venv/
+│   ├── bin/
+│   ├── include/
+│   ├── lib/
+│   ├── pyvenv.cfg
+│   └── ...
+└── README.md
