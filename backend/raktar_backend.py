@@ -152,7 +152,7 @@ async def get_table_content(table: str, rows: int = 10):
 
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {
-    "connections": {"default": "sqlite://db.sqlite3"},
+    "connections": {"default": "sqlite://backend/database/db.sqlite3"},
     "apps": {
         "models": {"models": ["raktar_backend", "aerich.models"], "default_connection": "default"}
     }
