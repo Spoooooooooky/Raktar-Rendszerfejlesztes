@@ -13,12 +13,21 @@ run_command() {
 
 echo "Initializing Aerich..."
 run_command "aerich init -t raktar_backend.TORTOISE_ORM"
-run_command "aerich init-db"
+
+echo "Running 'aerich init-db'..."
+aerich init-db | while IFS= read -r line; do
+    echo "$line"
+    if [[ "$line" == *"Success generating initial migration file for app \"models\""* ]]; then
+        echo "Killing Aerich..."
+        pkill -P $$ aerich
+        break
+    fi
+done
 
 echo "Running migrations..."
 migration_output=$(timeout 30s aerich migrate)
 if [ $? -eq 124 ]; then
-    echo "Warining: Migration either took too long or doesn't exist. If there is something to migrate, please run 'aerich migrate' manually."
+    echo "Warning: Migration either took too long or doesn't exist. If there is something to migrate, please run 'aerich migrate' manually."
 else
     echo "$migration_output"
     run_command "aerich upgrade"
