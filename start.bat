@@ -33,3 +33,5 @@ if "%migration_output%"=="" (
 
 echo Starting backend...
 call :run_command "python raktar_backend.py"
+
+pause
