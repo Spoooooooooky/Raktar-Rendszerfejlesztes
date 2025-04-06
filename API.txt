@@ -1,0 +1,90 @@
+1. Felhasználók kezelése
+Cél:
+Felhasználók (megrendelők, beszállítók, fuvarozók, raktárosok) adatainak kezelése.
+Személyes adatok (telefonszám, e-mail cím) módosítása.
+API-k:
+POST /felhasznalok/: Új felhasználó hozzáadása.
+GET /felhasznalok/{id}: Egy adott felhasználó adatainak lekérdezése.
+PUT /felhasznalok/{id}: Felhasználó adatainak módosítása.
+DELETE /felhasznalok/{id}: Felhasználó törlése.
+2. Termékek kezelése
+Cél:
+Termékek nyilvántartása (név, ár, ÁFA kulcs).
+API-k:
+POST /termekek/: Új termék hozzáadása.
+GET /termekek/{id}: Egy adott termék adatainak lekérdezése.
+PUT /termekek/{id}: Termék adatainak módosítása.
+DELETE /termekek/{id}: Termék törlése.
+3. Megrendelések kezelése
+Cél:
+Megrendelések leadása, módosítása, állapotának nyomon követése.
+Megrendelések lezárása 24 óra után.
+API-k:
+POST /rendelesek/: Új megrendelés leadása.
+GET /rendelesek/{id}: Egy adott megrendelés adatainak lekérdezése.
+PUT /rendelesek/{id}: Megrendelés módosítása (pl. darabszám, állapot).
+DELETE /rendelesek/{id}: Megrendelés törlése.
+GET /rendelesek/lezaras/: Megrendelések automatikus lezárása (pl. cron job vagy időzített feladat).
+4. Beszállítások kezelése
+Cél:
+Beszállítók által szállított áruk nyilvántartása.
+API-k:
+POST /beszallitasok/: Új beszállítás rögzítése.
+GET /beszallitasok/{id}: Egy adott beszállítás adatainak lekérdezése.
+PUT /beszallitasok/{id}: Beszállítás adatainak módosítása.
+DELETE /beszallitasok/{id}: Beszállítás törlése.
+5. Űrlapok kezelése
+Cél:
+Beszállítók által kitöltött áruszállítási űrlapok kezelése.
+API-k:
+POST /urlapok/: Új űrlap rögzítése.
+GET /urlapok/{id}: Egy adott űrlap adatainak lekérdezése.
+PUT /urlapok/{id}: Űrlap adatainak módosítása.
+DELETE /urlapok/{id}: Űrlap törlése.
+6. Fuvarok kezelése
+Cél:
+Fuvarok állapotának nyomon követése és módosítása.
+API-k:
+POST /fuvarok/: Új fuvar rögzítése.
+GET /fuvarok/{id}: Egy adott fuvar adatainak lekérdezése.
+PUT /fuvarok/{id}: Fuvar állapotának módosítása.
+DELETE /fuvarok/{id}: Fuvar törlése.
+7. Raktározás kezelése
+Cél:
+Beérkezett áruk hozzárendelése tárhelyekhez.
+Tárhelyek nyilvántartása.
+API-k:
+POST /tarhelyek/: Új tárhely rögzítése.
+GET /tarhelyek/{id}: Egy adott tárhely adatainak lekérdezése.
+PUT /tarhelyek/{id}: Tárhely adatainak módosítása.
+DELETE /tarhelyek/{id}: Tárhely törlése.
+8. Reklamációk kezelése
+Cél:
+Megrendelők reklamációinak kezelése.
+API-k:
+POST /reklamaciok/: Új reklamáció rögzítése.
+GET /reklamaciok/{id}: Egy adott reklamáció adatainak lekérdezése.
+PUT /reklamaciok/{id}: Reklamáció állapotának módosítása.
+DELETE /reklamaciok/{id}: Reklamáció törlése.
+9. Általános API-k
+Cél:
+Táblák tartalmának lekérdezése.
+Adatok törlése.
+API-k:
+GET /tabla-tartalom/: Egy adott tábla tartalmának lekérdezése.
+Paraméterek: table (tábla neve), rows (lekérdezendő sorok száma).
+GET /tablák/: Az elérhető táblák neveinek lekérdezése.
+DELETE /adatok-torlese/: Az összes adat törlése az adatbázisból.
+10. Felhasználói jogosultságok kezelése
+Cél:
+Különböző szerepkörök (megrendelő, beszállító, fuvarozó, raktáros) jogosultságainak kezelése.
+API-k:
+GET /jogosultsagok/{role}: Egy adott szerepkör jogosultságainak lekérdezése.
+PUT /jogosultsagok/{role}: Egy adott szerepkör jogosultságainak módosítása.
+11. Statisztikák és riportok
+Cél:
+Raktárkészlet, rendelések és szállítások statisztikáinak lekérdezése.
+API-k:
+GET /statisztikak/raktar/: Raktárkészlet statisztikák.
+GET /statisztikak/rendelesek/: Megrendelések statisztikák.
+GET /statisztikak/fuvarok/: Fuvarok statisztikák.
