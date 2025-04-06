@@ -12,3 +12,15 @@ class Felhasznalo(models.Model):
 
     def __str__(self):
         return f"{self.nev} ({self.email})"
+
+class Termek(models.Model):
+    id = fields.IntField(pk=True)
+    nev = fields.CharField(max_length=100)
+    ar = fields.FloatField()
+    afa_kulcs = fields.IntField()
+
+    class Meta:
+        table = "termekek"
+
+    def __str__(self):
+        return f"{self.nev} - {self.ar} Ft (ÁFA: {self.afa_kulcs}%)"

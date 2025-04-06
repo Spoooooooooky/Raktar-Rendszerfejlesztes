@@ -3,7 +3,8 @@ import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from pydantic import BaseModel
 from services.user_service import UserService
-from models.models import Felhasznalo  # A modellek importálása a külön fájlból
+from services.termek_service import TermekService
+from models.models import Felhasznalo, Termek
 
 app = FastAPI()
 
@@ -19,6 +20,16 @@ class FelhasznaloUpdate_Pydantic(BaseModel):
     email: str = None
     nev: str = None
     szerep: str = None
+
+class Termek_Pydantic(BaseModel):
+    nev: str
+    ar: float
+    afa_kulcs: int
+
+class TermekUpdate_Pydantic(BaseModel):
+    nev: str = None
+    ar: float = None
+    afa_kulcs: int = None
 
 # Felhasználók kezelése
 @app.post("/felhasznalok/")
@@ -64,11 +75,52 @@ async def delete_felhasznalo(user_id: int):
         raise HTTPException(status_code=404, detail="Felhasználó nem található")
     return {"message": "Felhasználó törölve"}
 
+# Termékek kezelése
+@app.post("/termekek/")
+async def add_termek(termek: Termek_Pydantic):
+    new_termek = await TermekService.add_termek(
+        nev=termek.nev,
+        ar=termek.ar,
+        afa_kulcs=termek.afa_kulcs
+    )
+    return {"message": "Termék hozzáadva", "termek_id": new_termek.id}
+
+@app.get("/termekek/{termek_id}")
+async def get_termek(termek_id: int):
+    termek = await TermekService.get_termek(termek_id)
+    if not termek:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {
+        "id": termek.id,
+        "nev": termek.nev,
+        "ar": termek.ar,
+        "afa_kulcs": termek.afa_kulcs
+    }
+
+@app.put("/termekek/{termek_id}")
+async def update_termek(termek_id: int, termek: TermekUpdate_Pydantic):
+    updated_termek = await TermekService.update_termek(
+        termek_id=termek_id,
+        nev=termek.nev,
+        ar=termek.ar,
+        afa_kulcs=termek.afa_kulcs
+    )
+    if not updated_termek:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {"message": "Termék frissítve", "termek_id": updated_termek.id}
+
+@app.delete("/termekek/{termek_id}")
+async def delete_termek(termek_id: int):
+    success = await TermekService.delete_termek(termek_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {"message": "Termék törölve"}
+
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {
     "connections": {"default": "sqlite://db.sqlite3"},
     "apps": {
-        "models": {"models": ["models", "aerich.models"], "default_connection": "default"}
+        "models": {"models": ["models.models", "aerich.models"], "default_connection": "default"}
     }
 }
 
