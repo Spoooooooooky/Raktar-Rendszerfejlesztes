@@ -4,7 +4,8 @@ from tortoise.contrib.fastapi import register_tortoise
 from pydantic import BaseModel
 from services.user_service import UserService
 from services.termek_service import TermekService
-from models.models import Felhasznalo, Termek
+from services.beszallitas_service import BeszallitasService  
+from models.models import Felhasznalo, Termek, Beszallitas 
 
 app = FastAPI()
 
@@ -30,6 +31,16 @@ class TermekUpdate_Pydantic(BaseModel):
     nev: str = None
     ar: float = None
     afa_kulcs: int = None
+
+class Beszallitas_Pydantic(BaseModel):
+    termek_id: int
+    mennyiseg: int
+    beszallito_nev: str
+
+class BeszallitasUpdate_Pydantic(BaseModel):
+    termek_id: int = None
+    mennyiseg: int = None
+    beszallito_nev: str = None
 
 # Felhasználók kezelése
 @app.post("/felhasznalok/")
@@ -115,6 +126,47 @@ async def delete_termek(termek_id: int):
     if not success:
         raise HTTPException(status_code=404, detail="Termék nem található")
     return {"message": "Termék törölve"}
+
+# Beszállítások kezelése
+@app.post("/beszallitasok/")
+async def add_beszallitas(beszallitas: Beszallitas_Pydantic):
+    new_beszallitas = await BeszallitasService.add_beszallitas(
+        termek_id=beszallitas.termek_id,
+        mennyiseg=beszallitas.mennyiseg,
+        beszallito_nev=beszallitas.beszallito_nev
+    )
+    return {"message": "Beszállítás rögzítve", "beszallitas_id": new_beszallitas.id}
+
+@app.get("/beszallitasok/{beszallitas_id}")
+async def get_beszallitas(beszallitas_id: int):
+    beszallitas = await BeszallitasService.get_beszallitas(beszallitas_id)
+    if not beszallitas:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {
+        "id": beszallitas.id,
+        "termek_id": beszallitas.termek_id,
+        "mennyiseg": beszallitas.mennyiseg,
+        "beszallito_nev": beszallitas.beszallito_nev
+    }
+
+@app.put("/beszallitasok/{beszallitas_id}")
+async def update_beszallitas(beszallitas_id: int, beszallitas: BeszallitasUpdate_Pydantic):
+    updated_beszallitas = await BeszallitasService.update_beszallitas(
+        beszallitas_id=beszallitas_id,
+        termek_id=beszallitas.termek_id,
+        mennyiseg=beszallitas.mennyiseg,
+        beszallito_nev=beszallitas.beszallito_nev
+    )
+    if not updated_beszallitas:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {"message": "Beszállítás frissítve", "beszallitas_id": updated_beszallitas.id}
+
+@app.delete("/beszallitasok/{beszallitas_id}")
+async def delete_beszallitas(beszallitas_id: int):
+    success = await BeszallitasService.delete_beszallitas(beszallitas_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {"message": "Beszállítás törölve"}
 
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {

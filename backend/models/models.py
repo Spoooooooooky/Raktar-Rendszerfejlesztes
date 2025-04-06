@@ -24,3 +24,15 @@ class Termek(models.Model):
 
     def __str__(self):
         return f"{self.nev} - {self.ar} Ft (ÁFA: {self.afa_kulcs}%)"
+
+class Beszallitas(models.Model):
+    id = fields.IntField(pk=True)
+    termek_id = fields.IntField()
+    mennyiseg = fields.IntField()
+    beszallito_nev = fields.CharField(max_length=100)
+
+    class Meta:
+        table = "beszallitasok"
+
+    def __str__(self):
+        return f"Beszállítás: {self.beszallito_nev}, Termék ID: {self.termek_id}, Mennyiség: {self.mennyiseg}"
