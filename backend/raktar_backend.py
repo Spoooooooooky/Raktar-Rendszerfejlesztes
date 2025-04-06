@@ -1,46 +1,20 @@
 from fastapi import FastAPI, HTTPException
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
-from pydantic import BaseModel
-from services.user_service import UserService
+from models.pydantic_models import (
+    Felhasznalo_Pydantic,
+    FelhasznaloUpdate_Pydantic,
+    Termek_Pydantic,
+    TermekUpdate_Pydantic,
+    Beszallitas_Pydantic,
+    BeszallitasUpdate_Pydantic,
+)
+from backend.services.felhasznalo_service import UserService
 from services.termek_service import TermekService
-from services.beszallitas_service import BeszallitasService  
-from models.models import Felhasznalo, Termek, Beszallitas 
+from services.beszallitas_service import BeszallitasService
+from models.models import Felhasznalo, Termek, Beszallitas
 
 app = FastAPI()
-
-# Pydantic modellek
-class Felhasznalo_Pydantic(BaseModel):
-    telefonszam: str
-    email: str
-    nev: str
-    szerep: str
-
-class FelhasznaloUpdate_Pydantic(BaseModel):
-    telefonszam: str = None
-    email: str = None
-    nev: str = None
-    szerep: str = None
-
-class Termek_Pydantic(BaseModel):
-    nev: str
-    ar: float
-    afa_kulcs: int
-
-class TermekUpdate_Pydantic(BaseModel):
-    nev: str = None
-    ar: float = None
-    afa_kulcs: int = None
-
-class Beszallitas_Pydantic(BaseModel):
-    termek_id: int
-    mennyiseg: int
-    beszallito_nev: str
-
-class BeszallitasUpdate_Pydantic(BaseModel):
-    termek_id: int = None
-    mennyiseg: int = None
-    beszallito_nev: str = None
 
 # Felhasználók kezelése
 @app.post("/felhasznalok/")
