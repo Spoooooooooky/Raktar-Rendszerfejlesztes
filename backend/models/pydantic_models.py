@@ -34,3 +34,15 @@ class BeszallitasUpdate_Pydantic(BaseModel):
     termek_id: int = None
     mennyiseg: int = None
     beszallito_nev: str = None
+    
+# Fuvarok kezelése
+class Fuvar_Pydantic(BaseModel):
+    szallitas_datum: date
+    beszallito_nev: str
+    termekek: list[dict]
+
+class FuvarUpdate_Pydantic(BaseModel):
+    statusz: str = None
+    szallitas_datum: date = None
+    beszallito_nev: str = None
+    termekek: list[dict] = None
