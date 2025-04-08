@@ -1,77 +1,164 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
-from tortoise import fields, models
-from pydantic import BaseModel
+from models.pydantic_models import (
+    Felhasznalo_Pydantic,
+    FelhasznaloUpdate_Pydantic,
+    Termek_Pydantic,
+    TermekUpdate_Pydantic,
+    Beszallitas_Pydantic,
+    BeszallitasUpdate_Pydantic,
+)
+from backend.services.felhasznalo_service import UserService
+from services.termek_service import TermekService
+from services.beszallitas_service import BeszallitasService
+from models.models import Felhasznalo, Termek, Beszallitas
 
 app = FastAPI()
 
-# Modellek
-class Customer(models.Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    email = fields.CharField(max_length=100, unique=True)
-    phone = fields.CharField(max_length=20, unique=True)
+# Felhasználók kezelése
+@app.post("/felhasznalok/")
+async def add_felhasznalo(felhasznalo: Felhasznalo_Pydantic):
+    user = await UserService.add_user(
+        telefonszam=felhasznalo.telefonszam,
+        email=felhasznalo.email,
+        nev=felhasznalo.nev,
+        szerep=felhasznalo.szerep
+    )
+    return {"message": "Felhasználó hozzáadva", "felhasznalo_id": user.id}
 
-class Supplier(models.Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    contact_email = fields.CharField(max_length=100, unique=True)
+@app.get("/felhasznalok/{user_id}")
+async def get_felhasznalo(user_id: int):
+    user = await UserService.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Felhasználó nem található")
+    return {
+        "id": user.id,
+        "telefonszam": user.telefonszam,
+        "email": user.email,
+        "nev": user.nev,
+        "szerep": user.szerep
+    }
 
-class Carrier(models.Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    vehicle_number = fields.CharField(max_length=50, unique=True)
+@app.put("/felhasznalok/{user_id}")
+async def update_felhasznalo(user_id: int, felhasznalo: FelhasznaloUpdate_Pydantic):
+    user = await UserService.update_user(
+        user_id=user_id,
+        telefonszam=felhasznalo.telefonszam,
+        email=felhasznalo.email,
+        nev=felhasznalo.nev,
+        szerep=felhasznalo.szerep
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Felhasználó nem található")
+    return {"message": "Felhasználó frissítve", "felhasznalo_id": user.id}
 
-class WarehouseWorker(models.Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    employee_id = fields.CharField(max_length=50, unique=True)
+@app.delete("/felhasznalok/{user_id}")
+async def delete_felhasznalo(user_id: int):
+    success = await UserService.delete_user(user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Felhasználó nem található")
+    return {"message": "Felhasználó törölve"}
 
-class Product(models.Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=100)
-    stock = fields.IntField(default=0)
+# Termékek kezelése
+@app.post("/termekek/")
+async def add_termek(termek: Termek_Pydantic):
+    new_termek = await TermekService.add_termek(
+        nev=termek.nev,
+        ar=termek.ar,
+        afa_kulcs=termek.afa_kulcs
+    )
+    return {"message": "Termék hozzáadva", "termek_id": new_termek.id}
 
-class Order(models.Model):
-    id = fields.IntField(pk=True)
-    customer = fields.ForeignKeyField("models.Customer", related_name="orders")
-    product = fields.ForeignKeyField("models.Product", related_name="orders")
-    quantity = fields.IntField()
-    status = fields.CharField(max_length=50, default="pending")
-    created_at = fields.DatetimeField(auto_now_add=True)
+@app.get("/termekek/{termek_id}")
+async def get_termek(termek_id: int):
+    termek = await TermekService.get_termek(termek_id)
+    if not termek:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {
+        "id": termek.id,
+        "nev": termek.nev,
+        "ar": termek.ar,
+        "afa_kulcs": termek.afa_kulcs
+    }
 
-# Pydantic modellek
-class Order_Pydantic(BaseModel):
-    customer: int
-    product: int
-    quantity: int
-    status: str
+@app.put("/termekek/{termek_id}")
+async def update_termek(termek_id: int, termek: TermekUpdate_Pydantic):
+    updated_termek = await TermekService.update_termek(
+        termek_id=termek_id,
+        nev=termek.nev,
+        ar=termek.ar,
+        afa_kulcs=termek.afa_kulcs
+    )
+    if not updated_termek:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {"message": "Termék frissítve", "termek_id": updated_termek.id}
 
-@app.post("/orders/")
-async def create_order(order: Order_Pydantic):
-    new_order = await Order.create(**order.dict())
-    return {"message": "Order created", "order_id": new_order.id}
+@app.delete("/termekek/{termek_id}")
+async def delete_termek(termek_id: int):
+    success = await TermekService.delete_termek(termek_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Termék nem található")
+    return {"message": "Termék törölve"}
 
-@app.get("/orders/")
-async def list_orders():
-    orders = await Order.all().values()
-    return orders
+# Beszállítások kezelése
+@app.post("/beszallitasok/")
+async def add_beszallitas(beszallitas: Beszallitas_Pydantic):
+    new_beszallitas = await BeszallitasService.add_beszallitas(
+        termek_id=beszallitas.termek_id,
+        mennyiseg=beszallitas.mennyiseg,
+        beszallito_nev=beszallitas.beszallito_nev
+    )
+    return {"message": "Beszállítás rögzítve", "beszallitas_id": new_beszallitas.id}
+
+@app.get("/beszallitasok/{beszallitas_id}")
+async def get_beszallitas(beszallitas_id: int):
+    beszallitas = await BeszallitasService.get_beszallitas(beszallitas_id)
+    if not beszallitas:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {
+        "id": beszallitas.id,
+        "termek_id": beszallitas.termek_id,
+        "mennyiseg": beszallitas.mennyiseg,
+        "beszallito_nev": beszallitas.beszallito_nev
+    }
+
+@app.put("/beszallitasok/{beszallitas_id}")
+async def update_beszallitas(beszallitas_id: int, beszallitas: BeszallitasUpdate_Pydantic):
+    updated_beszallitas = await BeszallitasService.update_beszallitas(
+        beszallitas_id=beszallitas_id,
+        termek_id=beszallitas.termek_id,
+        mennyiseg=beszallitas.mennyiseg,
+        beszallito_nev=beszallitas.beszallito_nev
+    )
+    if not updated_beszallitas:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {"message": "Beszállítás frissítve", "beszallitas_id": updated_beszallitas.id}
+
+@app.delete("/beszallitasok/{beszallitas_id}")
+async def delete_beszallitas(beszallitas_id: int):
+    success = await BeszallitasService.delete_beszallitas(beszallitas_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Beszállítás nem található")
+    return {"message": "Beszállítás törölve"}
 
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {
     "connections": {"default": "sqlite://db.sqlite3"},
     "apps": {
-        "models": {
-            "models": ["raktar_backend", "aerich.models"], 
-            "default_connection": "default",
-        }
+        "models": {"models": ["models.models", "aerich.models"], "default_connection": "default"}
     }
 }
 
 register_tortoise(
     app,
-    db_url="sqlite://db.sqlite3",
-    modules={"models": ["raktar_backend"]},
-    generate_schemas=False,  # Mivel aerich-t használunk migrációra
+    config=TORTOISE_ORM,
+    generate_schemas=True,
     add_exception_handlers=True,
 )
+
+def start():
+    uvicorn.run("raktar_backend:app", host="127.0.0.1", port=8000, reload=True)
+
+if __name__ == "__main__":
+    start()
