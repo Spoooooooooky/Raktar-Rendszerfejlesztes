@@ -25,7 +25,6 @@ class TermekUpdate_Pydantic(BaseModel):
     ar: float = None
     afa_kulcs: int = None
 
-# Beszállítások Pydantic modellek
 class Beszallitas_Pydantic(BaseModel):
     termek_id: int
     mennyiseg: int
@@ -35,8 +34,17 @@ class BeszallitasUpdate_Pydantic(BaseModel):
     termek_id: int = None
     mennyiseg: int = None
     beszallito_nev: str = None
+    
+class Fuvar_Pydantic(BaseModel):
+    szallitas_datum: date
+    beszallito_nev: str
+    termekek: list[dict]
 
-# Űrlapok Pydantic modellek
+class FuvarUpdate_Pydantic(BaseModel):
+    statusz: str = None
+    szallitas_datum: date = None
+    beszallito_nev: str = None
+
 class Urlap_Pydantic(BaseModel):
     beszallito_nev: str
     datum: date
