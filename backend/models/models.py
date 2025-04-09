@@ -37,6 +37,19 @@ class Beszallitas(models.Model):
     def __str__(self):
         return f"Beszállítás: {self.beszallito_nev}, Termék ID: {self.termek_id}, Mennyiség: {self.mennyiseg}"
     
+class Fuvar(models.Model):
+    id = fields.IntField(pk=True)
+    statusz = fields.CharField(max_length=50, default="Feldolgozás alatt")  
+    szallitas_datum = fields.DateField()
+    beszallito_nev = fields.CharField(max_length=100)
+    termekek = fields.JSONField()  
+
+    class Meta:
+        table = "fuvarok"
+
+    def __str__(self):
+        return f"Fuvar #{self.id} - {self.statusz}"
+      
 class Urlap(models.Model):
     id = fields.IntField(pk=True)
     beszallito_nev = fields.CharField(max_length=100)

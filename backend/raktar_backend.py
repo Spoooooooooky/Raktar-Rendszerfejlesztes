@@ -16,6 +16,9 @@ from models.models import Felhasznalo, Termek, Beszallitas
 from services.urlap_service import UrlapService
 from models.pydantic_models import Urlap_Pydantic, UrlapUpdate_Pydantic
 
+from services.fuvar_service import FuvarService
+from models.pydantic_models import Fuvar_Pydantic, FuvarUpdate_Pydantic
+
 app = FastAPI()
 
 # Felhasználók kezelése
@@ -144,6 +147,49 @@ async def delete_beszallitas(beszallitas_id: int):
         raise HTTPException(status_code=404, detail="Beszállítás nem található")
     return {"message": "Beszállítás törölve"}
 
+# Fuvarok kezelése
+
+@app.post("/fuvarok/")
+async def add_fuvar(fuvar: Fuvar_Pydantic):
+    new_fuvar = await FuvarService.add_fuvar(
+        szallitas_datum=fuvar.szallitas_datum,
+        beszallito_nev=fuvar.beszallito_nev,
+        termekek=fuvar.termekek
+    )
+    return {"message": "Fuvar rögzítve", "fuvar_id": new_fuvar.id}
+
+@app.get("/fuvarok/{fuvar_id}")
+async def get_fuvar(fuvar_id: int):
+    fuvar = await FuvarService.get_fuvar(fuvar_id)
+    if not fuvar:
+        raise HTTPException(404, "Fuvar nem található")
+    return {
+        "id": fuvar.id,
+        "statusz": fuvar.statusz,
+        "szallitas_datum": fuvar.szallitas_datum.isoformat(),
+        "beszallito_nev": fuvar.beszallito_nev,
+        "termekek": fuvar.termekek
+    }
+
+@app.put("/fuvarok/{fuvar_id}")
+async def update_fuvar(fuvar_id: int, fuvar: FuvarUpdate_Pydantic):
+    updated = await FuvarService.update_fuvar(
+        fuvar_id,
+        **fuvar.dict(exclude_unset=True)
+    )
+    if not updated:
+        raise HTTPException(404, "Fuvar nem található")
+    return {"message": "Fuvar frissítve"}
+
+@app.delete("/fuvarok/{fuvar_id}")
+async def delete_fuvar(fuvar_id: int):
+    success = await FuvarService.delete_fuvar(fuvar_id)
+    if not success:
+        raise HTTPException(404, "Fuvar nem található")
+    return {"message": "Fuvar törölve"}
+
+
+
 # Adatbázis konfiguráció és migráció
 TORTOISE_ORM = {
     "connections": {"default": "sqlite://db.sqlite3"},
@@ -151,6 +197,7 @@ TORTOISE_ORM = {
         "models": {"models": ["models.models", "aerich.models"], "default_connection": "default"}
     }
 }
+
 
 register_tortoise(
     app,
