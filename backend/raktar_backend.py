@@ -9,10 +9,12 @@ from models.pydantic_models import (
     Beszallitas_Pydantic,
     BeszallitasUpdate_Pydantic,
 )
-from backend.services.felhasznalo_service import UserService
+from services.felhasznalo_service import UserService
 from services.termek_service import TermekService
 from services.beszallitas_service import BeszallitasService
 from models.models import Felhasznalo, Termek, Beszallitas
+from services.urlap_service import UrlapService
+from models.pydantic_models import Urlap_Pydantic, UrlapUpdate_Pydantic
 
 from services.fuvar_service import FuvarService
 from models.pydantic_models import Fuvar_Pydantic, FuvarUpdate_Pydantic
@@ -203,6 +205,48 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True,
 )
+
+# Űrlapok kezelése
+
+
+@app.post("/urlapok/")
+async def add_urlap(urlap: Urlap_Pydantic):
+    new_urlap = await UrlapService.add_urlap(
+        beszallito_nev=urlap.beszallito_nev,
+        datum=urlap.datum,
+        termekek=urlap.termekek
+    )
+    return {"message": "Űrlap rögzítve", "urlap_id": new_urlap.id}
+
+@app.get("/urlapok/{urlap_id}")
+async def get_urlap(urlap_id: int):
+    urlap = await UrlapService.get_urlap(urlap_id)
+    if not urlap:
+        raise HTTPException(404, "Űrlap nem található")
+    return {
+        "id": urlap.id,
+        "beszallito_nev": urlap.beszallito_nev,
+        "datum": urlap.datum.isoformat(),
+        "termekek": urlap.termekek
+    }
+
+@app.put("/urlapok/{urlap_id}")
+async def update_urlap(urlap_id: int, urlap: UrlapUpdate_Pydantic):
+    updated = await UrlapService.update_urlap(
+        urlap_id,
+        **urlap.dict(exclude_unset=True)
+    )
+    if not updated:
+        raise HTTPException(404, "Űrlap nem található")
+    return {"message": "Űrlap frissítve"}
+
+@app.delete("/urlapok/{urlap_id}")
+async def delete_urlap(urlap_id: int):
+    success = await UrlapService.delete_urlap(urlap_id)
+    if not success:
+        raise HTTPException(404, "Űrlap nem található")
+    return {"message": "Űrlap törölve"}
+
 
 def start():
     uvicorn.run("raktar_backend:app", host="127.0.0.1", port=8000, reload=True)
