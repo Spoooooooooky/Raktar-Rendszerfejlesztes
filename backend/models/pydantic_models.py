@@ -34,3 +34,14 @@ class BeszallitasUpdate_Pydantic(BaseModel):
     termek_id: int = None
     mennyiseg: int = None
     beszallito_nev: str = None
+
+# Űrlapok Pydantic modellek
+class Urlap_Pydantic(BaseModel):
+    beszallito_nev: str
+    datum: date
+    termekek: list[dict]
+
+class UrlapUpdate_Pydantic(BaseModel):
+    beszallito_nev: str = None
+    datum: date = None
+    termekek: list[dict] = None
