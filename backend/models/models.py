@@ -36,3 +36,12 @@ class Beszallitas(models.Model):
 
     def __str__(self):
         return f"Beszállítás: {self.beszallito_nev}, Termék ID: {self.termek_id}, Mennyiség: {self.mennyiseg}"
+    
+class Urlap(models.Model):
+    id = fields.IntField(pk=True)
+    beszallito_nev = fields.CharField(max_length=100)
+    datum = fields.DateField()
+    termekek = fields.JSONField() 
+
+    class Meta:
+        table = "urlapok"
