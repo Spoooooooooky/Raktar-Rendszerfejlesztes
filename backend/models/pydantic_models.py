@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date
 
 # Felhasználók Pydantic modellek
 class Felhasznalo_Pydantic(BaseModel):
@@ -24,7 +25,6 @@ class TermekUpdate_Pydantic(BaseModel):
     ar: float = None
     afa_kulcs: int = None
 
-# Beszállítások Pydantic modellek
 class Beszallitas_Pydantic(BaseModel):
     termek_id: int
     mennyiseg: int
@@ -35,7 +35,6 @@ class BeszallitasUpdate_Pydantic(BaseModel):
     mennyiseg: int = None
     beszallito_nev: str = None
     
-# Fuvarok kezelése
 class Fuvar_Pydantic(BaseModel):
     szallitas_datum: date
     beszallito_nev: str
@@ -45,4 +44,13 @@ class FuvarUpdate_Pydantic(BaseModel):
     statusz: str = None
     szallitas_datum: date = None
     beszallito_nev: str = None
+
+class Urlap_Pydantic(BaseModel):
+    beszallito_nev: str
+    datum: date
+    termekek: list[dict]
+
+class UrlapUpdate_Pydantic(BaseModel):
+    beszallito_nev: str = None
+    datum: date = None
     termekek: list[dict] = None
