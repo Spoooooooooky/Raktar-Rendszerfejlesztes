@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date
 
 # Felhasználók Pydantic modellek
 class Felhasznalo_Pydantic(BaseModel):

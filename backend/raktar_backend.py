@@ -9,7 +9,7 @@ from models.pydantic_models import (
     Beszallitas_Pydantic,
     BeszallitasUpdate_Pydantic,
 )
-from backend.services.felhasznalo_service import UserService
+from services.felhasznalo_service import UserService
 from services.termek_service import TermekService
 from services.beszallitas_service import BeszallitasService
 from models.models import Felhasznalo, Termek, Beszallitas
