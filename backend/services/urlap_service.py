@@ -1,5 +1,7 @@
 from tortoise.exceptions import DoesNotExist
 from models.models import Urlap
+from datetime import date
+
 
 class UrlapService:
     @staticmethod
