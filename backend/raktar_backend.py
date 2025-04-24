@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from tortoise.contrib.fastapi import register_tortoise
 from models.pydantic_models import (
@@ -19,11 +19,65 @@ from models.pydantic_models import Urlap_Pydantic, UrlapUpdate_Pydantic
 from services.fuvar_service import FuvarService
 from models.pydantic_models import Fuvar_Pydantic, FuvarUpdate_Pydantic
 
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from typing import Optional
+import bcrypt
+import requests
+
+# Secret key for JWT
+SECRET_KEY = "your_secret_key_here"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+
+# Function to create access token
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# Dependency to get current user
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(
+                status_code=401, detail="Could not validate credentials"
+            )
+        return username
+    except JWTError:
+        raise HTTPException(
+            status_code=401, detail="Could not validate credentials"
+        )
+
 app = FastAPI()
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # Replace this with your user authentication logic
+    user = await UserService.authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401, detail="Incorrect username or password"
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # Felhasználók kezelése
 @app.post("/felhasznalok/")
-async def add_felhasznalo(felhasznalo: Felhasznalo_Pydantic):
+async def add_felhasznalo(felhasznalo: Felhasznalo_Pydantic, current_user: str = Depends(get_current_user)):
     user = await UserService.add_user(
         telefonszam=felhasznalo.telefonszam,
         email=felhasznalo.email,
@@ -33,7 +87,7 @@ async def add_felhasznalo(felhasznalo: Felhasznalo_Pydantic):
     return {"message": "Felhasználó hozzáadva", "felhasznalo_id": user.id}
 
 @app.get("/felhasznalok/{user_id}")
-async def get_felhasznalo(user_id: int):
+async def get_felhasznalo(user_id: int, current_user: str = Depends(get_current_user)):
     user = await UserService.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Felhasználó nem található")
@@ -46,7 +100,7 @@ async def get_felhasznalo(user_id: int):
     }
 
 @app.put("/felhasznalok/{user_id}")
-async def update_felhasznalo(user_id: int, felhasznalo: FelhasznaloUpdate_Pydantic):
+async def update_felhasznalo(user_id: int, felhasznalo: FelhasznaloUpdate_Pydantic, current_user: str = Depends(get_current_user)):
     user = await UserService.update_user(
         user_id=user_id,
         telefonszam=felhasznalo.telefonszam,
@@ -59,7 +113,7 @@ async def update_felhasznalo(user_id: int, felhasznalo: FelhasznaloUpdate_Pydant
     return {"message": "Felhasználó frissítve", "felhasznalo_id": user.id}
 
 @app.delete("/felhasznalok/{user_id}")
-async def delete_felhasznalo(user_id: int):
+async def delete_felhasznalo(user_id: int, current_user: str = Depends(get_current_user)):
     success = await UserService.delete_user(user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Felhasználó nem található")
@@ -67,7 +121,7 @@ async def delete_felhasznalo(user_id: int):
 
 # Termékek kezelése
 @app.post("/termekek/")
-async def add_termek(termek: Termek_Pydantic):
+async def add_termek(termek: Termek_Pydantic, current_user: str = Depends(get_current_user)):
     new_termek = await TermekService.add_termek(
         nev=termek.nev,
         ar=termek.ar,
@@ -76,7 +130,7 @@ async def add_termek(termek: Termek_Pydantic):
     return {"message": "Termék hozzáadva", "termek_id": new_termek.id}
 
 @app.get("/termekek/{termek_id}")
-async def get_termek(termek_id: int):
+async def get_termek(termek_id: int, current_user: str = Depends(get_current_user)):
     termek = await TermekService.get_termek(termek_id)
     if not termek:
         raise HTTPException(status_code=404, detail="Termék nem található")
@@ -88,7 +142,7 @@ async def get_termek(termek_id: int):
     }
 
 @app.put("/termekek/{termek_id}")
-async def update_termek(termek_id: int, termek: TermekUpdate_Pydantic):
+async def update_termek(termek_id: int, termek: TermekUpdate_Pydantic, current_user: str = Depends(get_current_user)):
     updated_termek = await TermekService.update_termek(
         termek_id=termek_id,
         nev=termek.nev,
@@ -100,7 +154,7 @@ async def update_termek(termek_id: int, termek: TermekUpdate_Pydantic):
     return {"message": "Termék frissítve", "termek_id": updated_termek.id}
 
 @app.delete("/termekek/{termek_id}")
-async def delete_termek(termek_id: int):
+async def delete_termek(termek_id: int, current_user: str = Depends(get_current_user)):
     success = await TermekService.delete_termek(termek_id)
     if not success:
         raise HTTPException(status_code=404, detail="Termék nem található")
@@ -108,7 +162,7 @@ async def delete_termek(termek_id: int):
 
 # Beszállítások kezelése
 @app.post("/beszallitasok/")
-async def add_beszallitas(beszallitas: Beszallitas_Pydantic):
+async def add_beszallitas(beszallitas: Beszallitas_Pydantic, current_user: str = Depends(get_current_user)):
     new_beszallitas = await BeszallitasService.add_beszallitas(
         termek_id=beszallitas.termek_id,
         mennyiseg=beszallitas.mennyiseg,
@@ -117,7 +171,7 @@ async def add_beszallitas(beszallitas: Beszallitas_Pydantic):
     return {"message": "Beszállítás rögzítve", "beszallitas_id": new_beszallitas.id}
 
 @app.get("/beszallitasok/{beszallitas_id}")
-async def get_beszallitas(beszallitas_id: int):
+async def get_beszallitas(beszallitas_id: int, current_user: str = Depends(get_current_user)):
     beszallitas = await BeszallitasService.get_beszallitas(beszallitas_id)
     if not beszallitas:
         raise HTTPException(status_code=404, detail="Beszállítás nem található")
@@ -129,7 +183,7 @@ async def get_beszallitas(beszallitas_id: int):
     }
 
 @app.put("/beszallitasok/{beszallitas_id}")
-async def update_beszallitas(beszallitas_id: int, beszallitas: BeszallitasUpdate_Pydantic):
+async def update_beszallitas(beszallitas_id: int, beszallitas: BeszallitasUpdate_Pydantic, current_user: str = Depends(get_current_user)):
     updated_beszallitas = await BeszallitasService.update_beszallitas(
         beszallitas_id=beszallitas_id,
         termek_id=beszallitas.termek_id,
@@ -141,7 +195,7 @@ async def update_beszallitas(beszallitas_id: int, beszallitas: BeszallitasUpdate
     return {"message": "Beszállítás frissítve", "beszallitas_id": updated_beszallitas.id}
 
 @app.delete("/beszallitasok/{beszallitas_id}")
-async def delete_beszallitas(beszallitas_id: int):
+async def delete_beszallitas(beszallitas_id: int, current_user: str = Depends(get_current_user)):
     success = await BeszallitasService.delete_beszallitas(beszallitas_id)
     if not success:
         raise HTTPException(status_code=404, detail="Beszállítás nem található")
@@ -150,7 +204,7 @@ async def delete_beszallitas(beszallitas_id: int):
 # Fuvarok kezelése
 
 @app.post("/fuvarok/")
-async def add_fuvar(fuvar: Fuvar_Pydantic):
+async def add_fuvar(fuvar: Fuvar_Pydantic, current_user: str = Depends(get_current_user)):
     new_fuvar = await FuvarService.add_fuvar(
         szallitas_datum=fuvar.szallitas_datum,
         beszallito_nev=fuvar.beszallito_nev,
@@ -159,7 +213,7 @@ async def add_fuvar(fuvar: Fuvar_Pydantic):
     return {"message": "Fuvar rögzítve", "fuvar_id": new_fuvar.id}
 
 @app.get("/fuvarok/{fuvar_id}")
-async def get_fuvar(fuvar_id: int):
+async def get_fuvar(fuvar_id: int, current_user: str = Depends(get_current_user)):
     fuvar = await FuvarService.get_fuvar(fuvar_id)
     if not fuvar:
         raise HTTPException(404, "Fuvar nem található")
@@ -172,7 +226,7 @@ async def get_fuvar(fuvar_id: int):
     }
 
 @app.put("/fuvarok/{fuvar_id}")
-async def update_fuvar(fuvar_id: int, fuvar: FuvarUpdate_Pydantic):
+async def update_fuvar(fuvar_id: int, fuvar: FuvarUpdate_Pydantic, current_user: str = Depends(get_current_user)):
     updated = await FuvarService.update_fuvar(
         fuvar_id,
         **fuvar.dict(exclude_unset=True)
@@ -182,7 +236,7 @@ async def update_fuvar(fuvar_id: int, fuvar: FuvarUpdate_Pydantic):
     return {"message": "Fuvar frissítve"}
 
 @app.delete("/fuvarok/{fuvar_id}")
-async def delete_fuvar(fuvar_id: int):
+async def delete_fuvar(fuvar_id: int, current_user: str = Depends(get_current_user)):
     success = await FuvarService.delete_fuvar(fuvar_id)
     if not success:
         raise HTTPException(404, "Fuvar nem található")
@@ -210,7 +264,7 @@ register_tortoise(
 
 
 @app.post("/urlapok/")
-async def add_urlap(urlap: Urlap_Pydantic):
+async def add_urlap(urlap: Urlap_Pydantic, current_user: str = Depends(get_current_user)):
     new_urlap = await UrlapService.add_urlap(
         beszallito_nev=urlap.beszallito_nev,
         datum=urlap.datum,
@@ -219,7 +273,7 @@ async def add_urlap(urlap: Urlap_Pydantic):
     return {"message": "Űrlap rögzítve", "urlap_id": new_urlap.id}
 
 @app.get("/urlapok/{urlap_id}")
-async def get_urlap(urlap_id: int):
+async def get_urlap(urlap_id: int, current_user: str = Depends(get_current_user)):
     urlap = await UrlapService.get_urlap(urlap_id)
     if not urlap:
         raise HTTPException(404, "Űrlap nem található")
@@ -231,7 +285,7 @@ async def get_urlap(urlap_id: int):
     }
 
 @app.put("/urlapok/{urlap_id}")
-async def update_urlap(urlap_id: int, urlap: UrlapUpdate_Pydantic):
+async def update_urlap(urlap_id: int, urlap: UrlapUpdate_Pydantic, current_user: str = Depends(get_current_user)):
     updated = await UrlapService.update_urlap(
         urlap_id,
         **urlap.dict(exclude_unset=True)
@@ -241,15 +295,26 @@ async def update_urlap(urlap_id: int, urlap: UrlapUpdate_Pydantic):
     return {"message": "Űrlap frissítve"}
 
 @app.delete("/urlapok/{urlap_id}")
-async def delete_urlap(urlap_id: int):
+async def delete_urlap(urlap_id: int, current_user: str = Depends(get_current_user)):
     success = await UrlapService.delete_urlap(urlap_id)
     if not success:
         raise HTTPException(404, "Űrlap nem található")
     return {"message": "Űrlap törölve"}
 
 
-def start():
-    uvicorn.run("raktar_backend:app", host="127.0.0.1", port=8000, reload=True)
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def login_terminal(username: str, password: str):
+    hashed_password = hash_password(password)
+    response = requests.post(
+        "http://127.0.0.1:8000/token",
+        data={"username": username, "password": hashed_password},
+    )
+    if response.status_code == 200:
+        print("Login successful! Token:", response.json()["access_token"])
+    else:
+        print("Login failed!", response.json())
 
 if __name__ == "__main__":
-    start()
+    uvicorn.run("raktar_backend:app", host="127.0.0.1", port=8000, reload=True)
