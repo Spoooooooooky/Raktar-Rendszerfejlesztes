@@ -12,12 +12,20 @@ from models.pydantic_models import (
 from services.felhasznalo_service import UserService
 from services.termek_service import TermekService
 from services.beszallitas_service import BeszallitasService
-from models.models import Felhasznalo, Termek, Beszallitas
+from models.models import Felhasznalo, Termek, Beszallitas, Rendeles, Tarhely, Urlap, Fuvar
 from services.urlap_service import UrlapService
 from models.pydantic_models import Urlap_Pydantic, UrlapUpdate_Pydantic
 
 from services.fuvar_service import FuvarService
 from models.pydantic_models import Fuvar_Pydantic, FuvarUpdate_Pydantic
+
+from services.rendeles_service import RendelesService
+from models.pydantic_models import Rendeles_Pydantic, RendelesUpdate_Pydantic
+
+from services.tarhely_service import TarhelyService
+from models.pydantic_models import Tarhely_Pydantic
+
+from tortoise import Tortoise
 
 app = FastAPI()
 
@@ -188,6 +196,83 @@ async def delete_fuvar(fuvar_id: int):
         raise HTTPException(404, "Fuvar nem található")
     return {"message": "Fuvar törölve"}
 
+# Rendelések kezelése
+@app.post("/rendelesek/")
+async def add_rendeles(rendeles: Rendeles_Pydantic):
+    new_rendeles = await RendelesService.add_rendeles(
+        termek_id=rendeles.termek_id,
+        mennyiseg=rendeles.mennyiseg,
+        allapot=rendeles.allapot,
+        megrendelo_id=rendeles.megrendelo_id,
+        szallitasi_cim=rendeles.szallitasi_cim
+    )
+    return {"message": "Rendelés rögzítve", "rendeles_id": new_rendeles.id}
+
+@app.get("/rendelesek/{rendeles_id}")
+async def get_rendeles(rendeles_id: int):
+    rendeles = await RendelesService.get_rendeles(rendeles_id)
+    if not rendeles:
+        raise HTTPException(404, "Rendelés nem található")
+    return rendeles
+
+@app.delete("/rendelesek/{rendeles_id}")
+async def delete_rendeles(rendeles_id: int):
+    success = await RendelesService.delete_rendeles(rendeles_id)
+    if not success:
+        raise HTTPException(404, "Rendelés nem található")
+    return {"message": "Rendelés törölve"}
+
+# Tárhelyek kezelése
+@app.post("/tarhelyek/")
+async def add_tarhely(tarhely: Tarhely_Pydantic):
+    new_tarhely = await TarhelyService.add_tarhely(
+        termek_id=tarhely.termek_id,
+        mennyiseg=tarhely.mennyiseg
+    )
+    return {"message": "Tárhely rögzítve", "tarhely_id": new_tarhely.id}
+
+@app.get("/tarhelyek/{tarhely_id}")
+async def get_tarhely(tarhely_id: int):
+    tarhely = await TarhelyService.get_tarhely(tarhely_id)
+    if not tarhely:
+        raise HTTPException(404, "Tárhely nem található")
+    return tarhely
+
+# Egyéb végpontok
+@app.delete("/adatok-torlese/")
+async def clear_data():
+    await Felhasznalo.all().delete()
+    await Termek.all().delete()
+    await Beszallitas.all().delete()
+    await Rendeles.all().delete()
+    await Urlap.all().delete()
+    await Fuvar.all().delete()
+    await Tarhely.all().delete()
+    return {"message": "Minden adat törölve"}
+
+@app.get("/tabla-tartalom/")
+async def get_table_content(table: str, rows: int = 10):
+    models = {
+        "Felhasznalok": Felhasznalo, "Termekek": Termek, "Rendelesek": Rendeles,
+        "Beszallitasok": Beszallitas, "Urlapok": Urlap, "Fuvarok": Fuvar, "Tarhelyek": Tarhely
+    }
+    if table not in models:
+        raise HTTPException(400, "Ismeretlen tábla")
+    
+    data = await models[table].all().limit(rows).values()
+    return data
+
+@app.get("/tablak/")
+async def list_tables():
+    return [
+        "Felhasznalok",
+        "Termekek",
+        "Rendelesek",
+        "Beszallitasok",
+        "Urlapok",
+        "Fuvarok",
+        "Tarhelyek"
+    ]
 
 
 # Adatbázis konfiguráció és migráció

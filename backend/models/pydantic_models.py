@@ -54,3 +54,21 @@ class UrlapUpdate_Pydantic(BaseModel):
     beszallito_nev: str = None
     datum: date = None
     termekek: list[dict] = None
+
+class Rendeles_Pydantic(BaseModel):
+    termek_id: int
+    mennyiseg: int
+    allapot: str
+    megrendelo_id: int
+    szallitasi_cim: str
+
+class RendelesUpdate_Pydantic(BaseModel):
+    termek_id: int = None
+    mennyiseg: int = None
+    allapot: str = None
+    megrendelo_id: int = None
+    szallitasi_cim: str = None
+
+class Tarhely_Pydantic(BaseModel):
+    termek_id: int
+    mennyiseg: int

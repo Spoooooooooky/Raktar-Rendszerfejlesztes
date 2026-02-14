@@ -58,3 +58,29 @@ class Urlap(models.Model):
 
     class Meta:
         table = "urlapok"
+
+class Rendeles(models.Model):
+    id = fields.IntField(pk=True)
+    termek_id = fields.IntField()
+    mennyiseg = fields.IntField()
+    allapot = fields.CharField(max_length=50)
+    megrendelo_id = fields.IntField()
+    szallitasi_cim = fields.CharField(max_length=200)
+
+    class Meta:
+        table = "rendelesek"
+
+    def __str__(self):
+        return f"Rendelés #{self.id} - {self.allapot}"
+
+class Tarhely(models.Model):
+    id = fields.IntField(pk=True)
+    termek_id = fields.IntField()
+    mennyiseg = fields.IntField()
+    beerkezes_datum = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "tarhelyek"
+
+    def __str__(self):
+        return f"Tárhely #{self.id} - Termék: {self.termek_id}"
