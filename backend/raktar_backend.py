@@ -4,6 +4,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from models.pydantic_models import (
     Felhasznalo_Pydantic,
     FelhasznaloUpdate_Pydantic,
+    Login_Pydantic,
     Termek_Pydantic,
     TermekUpdate_Pydantic,
     Beszallitas_Pydantic,
@@ -36,9 +37,23 @@ async def add_felhasznalo(felhasznalo: Felhasznalo_Pydantic):
         telefonszam=felhasznalo.telefonszam,
         email=felhasznalo.email,
         nev=felhasznalo.nev,
-        szerep=felhasznalo.szerep
+        szerep=felhasznalo.szerep,
+        jelszo=felhasznalo.jelszo,
+        cim=felhasznalo.cim
     )
     return {"message": "Felhasználó hozzáadva", "felhasznalo_id": user.id}
+
+@app.post("/login/")
+async def login(credentials: Login_Pydantic):
+    user = await UserService.verify_user(credentials.nev, credentials.jelszo)
+    if not user:
+        raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó")
+    return {
+        "message": "Sikeres bejelentkezés",
+        "user_id": user.id,
+        "nev": user.nev,
+        "szerep": user.szerep
+    }
 
 @app.get("/felhasznalok/{user_id}")
 async def get_felhasznalo(user_id: int):
@@ -50,7 +65,8 @@ async def get_felhasznalo(user_id: int):
         "telefonszam": user.telefonszam,
         "email": user.email,
         "nev": user.nev,
-        "szerep": user.szerep
+        "szerep": user.szerep,
+        "cim": user.cim
     }
 
 @app.put("/felhasznalok/{user_id}")
@@ -60,7 +76,9 @@ async def update_felhasznalo(user_id: int, felhasznalo: FelhasznaloUpdate_Pydant
         telefonszam=felhasznalo.telefonszam,
         email=felhasznalo.email,
         nev=felhasznalo.nev,
-        szerep=felhasznalo.szerep
+        szerep=felhasznalo.szerep,
+        jelszo=felhasznalo.jelszo,
+        cim=felhasznalo.cim
     )
     if not user:
         raise HTTPException(status_code=404, detail="Felhasználó nem található")
@@ -82,6 +100,10 @@ async def add_termek(termek: Termek_Pydantic):
         afa_kulcs=termek.afa_kulcs
     )
     return {"message": "Termék hozzáadva", "termek_id": new_termek.id}
+
+@app.get("/termekek/")
+async def get_all_termekek():
+    return await TermekService.get_all_termekek()
 
 @app.get("/termekek/{termek_id}")
 async def get_termek(termek_id: int):
@@ -214,6 +236,16 @@ async def get_rendeles(rendeles_id: int):
     if not rendeles:
         raise HTTPException(404, "Rendelés nem található")
     return rendeles
+
+@app.put("/rendelesek/{rendeles_id}")
+async def update_rendeles(rendeles_id: int, rendeles: RendelesUpdate_Pydantic):
+    updated = await RendelesService.update_rendeles(
+        rendeles_id,
+        **rendeles.dict(exclude_unset=True)
+    )
+    if not updated:
+        raise HTTPException(404, "Rendelés nem található")
+    return {"message": "Rendelés frissítve"}
 
 @app.delete("/rendelesek/{rendeles_id}")
 async def delete_rendeles(rendeles_id: int):

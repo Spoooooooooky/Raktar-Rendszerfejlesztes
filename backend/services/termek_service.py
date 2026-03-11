@@ -38,6 +38,11 @@ class TermekService:
             return None
 
     @staticmethod
+    async def get_all_termekek():
+        """Összes termék lekérdezése."""
+        return await Termek.all()
+
+    @staticmethod
     async def delete_termek(termek_id: int):
         """Termék törlése ID alapján."""
         try:

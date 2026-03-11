@@ -16,7 +16,7 @@ Ezen túlmenően a raktárosok felelősek az áru kiadásának jelzéséért is,
 A raktárosok szintén megtekinthetik a rendszerben a megrendeléseket, és hozzá tudnak rendelni egy fuvarozót a megrendeléshez, biztosítva ezzel a logisztikai folyamatok zökkenőmentes működését.
 
 Rendelesek tabla:
-ID, Termekek (TermekID), Mennyiseguk (int, minden termekre kulon), Allapot (enum), Megrendelo (FelhasznaloID), Szallitasi Cim (string)
+ID, Termek (TermekID), Mennyiseguk (int, minden termekre kulon), Allapot (enum), Megrendelo (FelhasznaloID), Szallitasi Cim (string)
 
 Felhasznalok tabla:
 ID, Telefonszam (string), Email cim (string), Nev (string), Role (enum)
@@ -35,15 +35,3 @@ ID, Hozzarendelt Termek(TermekID), Mennyiseg(int), Beerkezes Datuma (time)
 
 Termekek tabla:
 ID, Nev (string), Ar (int, 1500Ft = 150000), Afa kulcs (int, 27% = 27, vagy 27 vagy 18, vagy 5 lehet.)
-
-Nemfunkcionális követelmények:
-A rendszernek nagy teljesítményt kell nyújtania, hogy a felhasználók (megrendelők, beszállítók, fuvarozók, raktárosok) gyorsan és hatékonyan használhassák a különböző funkciókat. 
-Fontos, hogy a rendszer egyszerű és könnyen érthető felhasználói felülettel rendelkezzen, így a felhasználók minimális képzéssel is el tudják látni a feladataikat.
-Mivel a raktárkészlet kezelése kritikus üzleti folyamat, a rendszernek magas rendelkezésre állással kell működnie, minimális karbantartási idővel és kimaradással. 
-A rendszernek biztonságosnak kell lennie, biztosítva a személyes adatok és a raktárkészlettel kapcsolatos információk védelmét. 
-A rendszernek adatvédelmi szabályoknak megfelelően kell kezelnie a felhasználói adatokat, biztosítva a magánélet tiszteletben tartását és az adatok bizalmasságát.
-A rendszernek skálázhatónak kell lennie, hogy kezelni tudja a változó terhelést, különösen a megnövekedett rendelések időszakaiban. 
-Hibatűrő képessége is kiemelten fontos, a rendszernek képesnek kell lennie az esetleges hibák kezelésére és az adatok biztonságának megőrzésére hálózati vagy rendszerhibák esetén. 
-Emellett kompatibilisnek kell lennie különböző platformokkal és eszközökkel, beleértve az asztali és mobil eszközöket, hogy a felhasználók bárhonnan hozzáférhessenek a rendszerhez.
-Az adatbázis-kezelésnek hatékonynak és gyorsnak kell lennie, hogy támogassa az áruk nyilvántartását, a megrendelések feldolgozását és az állapotjelentések frissítését.
-Összességében a Raktár rendszer célja a raktárkészlet hatékony és biztonságos kezelése, a szállítási folyamatok optimalizálása, valamint a felhasználók közötti zökkenőmentes kommunikáció biztosítása a rendelési, szállítási és raktározási folyamat során.

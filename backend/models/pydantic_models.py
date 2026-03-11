@@ -7,12 +7,20 @@ class Felhasznalo_Pydantic(BaseModel):
     email: str
     nev: str
     szerep: str
+    jelszo: str
+    cim: str
+
+class Login_Pydantic(BaseModel):
+    nev: str
+    jelszo: str
 
 class FelhasznaloUpdate_Pydantic(BaseModel):
     telefonszam: str = None
     email: str = None
     nev: str = None
     szerep: str = None
+    jelszo: str = None
+    cim: str = None
 
 # Termékek Pydantic modellek
 class Termek_Pydantic(BaseModel):

@@ -6,6 +6,8 @@ class Felhasznalo(models.Model):
     email = fields.CharField(max_length=100, unique=True)
     nev = fields.CharField(max_length=100)
     szerep = fields.CharField(max_length=50)
+    jelszo = fields.CharField(max_length=128, default="")
+    cim = fields.CharField(max_length=200, default="")
 
     class Meta:
         table = "felhasznalok"

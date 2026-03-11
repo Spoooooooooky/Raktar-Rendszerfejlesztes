@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, DataTable, Button, Label, ListView, ListItem, Static, Input
+from textual.widgets import Header, Footer, DataTable, Button, Label, ListView, ListItem, Static, Input, Select
 from textual.screen import Screen
 import httpx
 import json
@@ -8,20 +8,32 @@ import json
 API_URL = "http://127.0.0.1:8000"
 
 class DataEntryScreen(Screen):
-    def __init__(self, table_name: str, on_save: callable = None):
+    def __init__(self, table_name: str, on_save: callable = None, item_id: str = None, initial_data: dict = None):
         super().__init__()
         self.table_name = table_name
         self.on_save = on_save
+        self.item_id = item_id
+        self.initial_data = initial_data or {}
         self.inputs = {}
 
     def compose(self) -> ComposeResult:
         with Container(id="dialog"):
-            yield Label(f"Add new item to {self.table_name}", classes="form-title")
+            title = f"Edit item in {self.table_name}" if self.item_id else f"Add new item to {self.table_name}"
+            yield Label(title, classes="form-title")
             
             fields = self.get_fields(self.table_name)
             for field_key, field_label in fields.items():
                 yield Label(field_label)
-                inp = Input(placeholder=field_label, id=field_key)
+                
+                is_password_field = (field_key == "jelszo")
+                current_value = str(self.initial_data.get(field_key, ""))
+
+                if self.table_name == "Felhasznalok" and field_key == "szerep":
+                    inp = Select([("customer", "customer"), ("storage", "storage"), ("admin", "admin")], value=current_value or None, prompt="Válassz szerepet")
+                else:
+                    value_to_display = "" if self.item_id and is_password_field else current_value
+                    inp = Input(value=value_to_display, placeholder=field_label, id=field_key, password=is_password_field)
+
                 self.inputs[field_key] = inp
                 yield inp
 
@@ -31,7 +43,7 @@ class DataEntryScreen(Screen):
 
     def get_fields(self, table_name):
         if table_name == "Felhasznalok":
-            return {"telefonszam": "Telefonszám", "email": "Email", "nev": "Név", "szerep": "Szerep"}
+            return {"telefonszam": "Telefonszám", "email": "Email", "nev": "Név", "szerep": "Szerep", "jelszo": "Jelszó", "cim": "Cím"}
         elif table_name == "Termekek":
             return {"nev": "Név", "ar": "Ár", "afa_kulcs": "ÁFA Kulcs"}
         elif table_name == "Rendelesek":
@@ -56,6 +68,10 @@ class DataEntryScreen(Screen):
         data = {}
         for key, inp in self.inputs.items():
             val = inp.value
+
+            if self.item_id and key == "jelszo" and not val:
+                continue
+
             if key in ["ar"]:
                 try: val = float(val)
                 except: pass
@@ -69,9 +85,13 @@ class DataEntryScreen(Screen):
 
         endpoint = self.table_name.lower() + "/"
         try:
-            response = httpx.post(f"{API_URL}/{endpoint}", json=data)
+            if self.item_id:
+                response = httpx.put(f"{API_URL}/{endpoint}{self.item_id}", json=data)
+            else:
+                response = httpx.post(f"{API_URL}/{endpoint}", json=data)
+
             if 200 <= response.status_code < 300:
-                self.notify("Item added successfully!")
+                self.notify("Item saved successfully!")
                 if self.on_save:
                     self.on_save()
                 self.app.pop_screen()
@@ -91,6 +111,7 @@ class TableView(Container):
         yield DataTable(cursor_type="row")
         with Horizontal(classes="buttons"):
             yield Button("Add Item", variant="success", id="add-btn")
+            yield Button("Edit Item", variant="primary", id="edit-btn")
             yield Button("Delete Item", variant="warning", id="delete-btn")
             yield Button("Refresh", variant="primary", id="refresh-btn")
             yield Button("Clear All Data", variant="error", id="clear-btn")
@@ -107,12 +128,31 @@ class TableView(Container):
             response = httpx.get(f"{API_URL}/tabla-tartalom/", params={"table": self.table_name, "rows": 100})
             if response.status_code == 200:
                 data = response.json()
+                
+                products = {}
+                if self.table_name in ["Rendelesek", "Tarhelyek", "Beszallitasok"]:
+                    try:
+                        prod_resp = httpx.get(f"{API_URL}/termekek/")
+                        if prod_resp.status_code == 200:
+                            products = {p["id"]: p["nev"] for p in prod_resp.json()}
+                    except:
+                        pass
+
                 if data:
                     headers = list(data[0].keys())
                     self.column_names = headers
                     table.add_columns(*headers)
                     for row in data:
-                        table.add_row(*[str(row.get(h)) for h in headers])
+                        row_values = []
+                        for h in headers:
+                            val = row.get(h)
+                            if h == "termek_id" and val in products:
+                                val = products[val]
+                            if isinstance(val, (list, dict)):
+                                row_values.append(json.dumps(val))
+                            else:
+                                row_values.append(str(val) if val is not None else "")
+                        table.add_row(*row_values)
             else:
                 table.add_column("Error")
                 table.add_row(f"Failed to load: {response.text}")
@@ -123,6 +163,8 @@ class TableView(Container):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "add-btn":
             self.app.push_screen(DataEntryScreen(self.table_name, self.load_data))
+        elif event.button.id == "edit-btn":
+            self.edit_selected_item()
         elif event.button.id == "delete-btn":
             self.delete_selected_item()
         elif event.button.id == "refresh-btn":
@@ -158,6 +200,34 @@ class TableView(Container):
                     self.app.notify(f"Error: {response.text}", severity="error")
             else:
                 self.app.notify("Cannot find ID column.", severity="error")
+        except Exception as e:
+            self.app.notify(f"Error: {e}", severity="error")
+
+    def edit_selected_item(self):
+        table = self.query_one(DataTable)
+        if table.cursor_row is None:
+            self.app.notify("No item selected.", severity="warning")
+            return
+
+        try:
+            row_index = table.cursor_row
+            row_values = table.get_row_at(row_index)
+            
+            if not self.column_names:
+                 self.app.notify("Column names missing.", severity="error")
+                 return
+
+            item_data = {}
+            for i, col_name in enumerate(self.column_names):
+                if i < len(row_values):
+                    item_data[col_name] = row_values[i]
+
+            if "id" in item_data:
+                item_id = item_data["id"]
+                self.app.push_screen(DataEntryScreen(self.table_name, self.load_data, item_id=item_id, initial_data=item_data))
+            else:
+                self.app.notify("Cannot find ID column.", severity="error")
+
         except Exception as e:
             self.app.notify(f"Error: {e}", severity="error")
 

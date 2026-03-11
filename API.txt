@@ -87,19 +87,3 @@ GET /tabla-tartalom/: Egy adott tábla tartalmának lekérdezése.
 Paraméterek: table (tábla neve), rows (lekérdezendő sorok száma).
 GET /tablák/: Az elérhető táblák neveinek lekérdezése.
 DELETE /adatok-torlese/: Az összes adat törlése az adatbázisból.
-
-10. Felhasználói jogosultságok kezelése
-Cél:
-Különböző szerepkörök (megrendelő, beszállító, fuvarozó, raktáros) jogosultságainak kezelése.
-API-k:
-GET /jogosultsagok/{role}: Egy adott szerepkör jogosultságainak lekérdezése.
-PUT /jogosultsagok/{role}: Egy adott szerepkör jogosultságainak módosítása.
-
-Folyamatban, Szabolcs csinalja
-11. Statisztikák és riportok
-Cél:
-Raktárkészlet, rendelések és szállítások statisztikáinak lekérdezése.
-API-k:
-GET /statisztikak/raktar/: Raktárkészlet statisztikák.
-GET /statisztikak/rendelesek/: Megrendelések statisztikák.
-GET /statisztikak/fuvarok/: Fuvarok statisztikák.
